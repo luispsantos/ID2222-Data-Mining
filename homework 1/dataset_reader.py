@@ -4,8 +4,9 @@ import jsonlines
 
 
 def read_webhose_dataset(dataset_file, num_docs=None):
+    # webhose datasets: https://webhose.io/free-datasets/
     docs = []
-    # read the zip file containing the dataset
+    # read the zip file containing the webhose dataset
     with zipfile.ZipFile(dataset_file) as dataset_zipfile:
         # find the name of the JSON file inside the zip file
         json_filename = dataset_zipfile.namelist()[0]
