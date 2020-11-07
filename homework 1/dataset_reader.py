@@ -1,13 +1,16 @@
 import zipfile
 import itertools
 import jsonlines
+from os.path import join
 
 
 def read_webhose_dataset(dataset_file, num_docs=None):
     # webhose datasets: https://webhose.io/free-datasets/
     docs = []
+    dataset_path = join('datasets', dataset_file)
+
     # read the zip file containing the webhose dataset
-    with zipfile.ZipFile(dataset_file) as dataset_zipfile:
+    with zipfile.ZipFile(dataset_path) as dataset_zipfile:
         # find the name of the JSON file inside the zip file
         json_filename = dataset_zipfile.namelist()[0]
 
@@ -22,8 +25,9 @@ def read_webhose_dataset(dataset_file, num_docs=None):
     return docs
 
 
-dataset_file = 'datasets/covid-discussions.zip'
-num_docs = 100
+if __name__ == '__main__':
+    dataset_file = 'covid-discussions.zip'
+    num_docs = 100
 
-docs = read_webhose_dataset(input_file, num_docs)
-print(docs)
+    docs = read_webhose_dataset(dataset_file, num_docs)
+    print(docs)
