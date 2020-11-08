@@ -1,39 +1,8 @@
 import itertools
 import operator
 import numpy as np
-import string
 import sympy
-import unicodedata
-from scipy.sparse import csr_matrix
-
-
-class TextPreprocessor:
-    def __init__(self, lowercase=True, remove_punctuation=True, remove_accents=True, normalize_whitespace=True):
-        self.lowercase = lowercase
-        self.remove_accents = remove_accents
-        self.remove_punctuation = remove_punctuation
-        self.normalize_whitespace = normalize_whitespace
-
-    def strip_accents(self, doc):
-        doc_nfkd = unicodedata.normalize('NFKD', doc)
-        doc_ascii = doc_nfkd.encode('ASCII', 'ignore').decode('ascii')
-
-        return doc_ascii
-
-    def preprocess_document(self, doc):
-        if self.lowercase:
-            doc = doc.lower()
-
-        if self.remove_accents:
-            doc = self.strip_accents(doc)
-
-        if self.remove_punctuation:
-            doc = ''.join(char for char in doc if char not in string.punctuation)
-
-        if self.normalize_whitespace:
-            doc = ' '.join(doc.split())
-
-        return doc
+from scipy import sparse
 
 
 class Shingling:
@@ -67,10 +36,10 @@ class Shingling:
         doc_shingles, shingle_idxs = self.create_document_shingles(doc_list)
         n_docs, n_shingles = len(doc_shingles), len(shingle_idxs)
 
-        l = [(shingle_idxs[shingle], doc_id, 1) for doc_id, shingles in enumerate(doc_shingles) for shingle in shingles]
-        shingle_indices, doc_indices, data = zip(*l)
+        vals = [(shingle_idxs[shingle], doc_id, 1) for doc_id, shingles in enumerate(doc_shingles) for shingle in shingles]
+        shingle_indices, doc_indices, data = zip(*vals)
 
-        char_matrix = csr_matrix((data, (shingle_indices, doc_indices)), shape=(n_shingles, n_docs), dtype=np.bool_)
+        char_matrix = sparse.csr_matrix((data, (shingle_indices, doc_indices)), shape=(n_shingles, n_docs), dtype=np.bool_)
         return char_matrix
 
 
@@ -121,23 +90,18 @@ class MinHashing:
         # for more information check: https://en.wikipedia.org/wiki/Universal_hashing#Hashing_integers
         return ((a*x + b) % p) % m
 
-    def compute_signature_perm(self, doc_shingles, n_shingles):
-        n_signature, n_docs = self.n_signature, len(doc_shingles)
+    def compute_signature_perm(self, char_matrix):
+        n_signature, (n_shingles, n_docs) = self.n_signature, char_matrix.shape
 
-        unique_shingles = set(shingle for shingles in doc_shingles for shingle in shingles)
-        shingle_idxs = {shingle: idx for idx, shingle in enumerate(sorted(unique_shingles))}
-
-        l = [(shingle_idxs[shingle], doc_id) for doc_id, doc in enumerate(doc_shingles) for shingle in doc]
-        a, b = zip(*l)
-
-        M = csr_matrix(([1]*len(a), (a, b)), shape=(n_shingles, n_docs), dtype=np.bool_)
+        # initialize the signature matrix with zeros
         signature = np.zeros((n_signature, n_docs), dtype=np.int32)
 
-        for i in range(n_signature):
+        for idx in range(n_signature):
+            # permute the rows of the characteristic matrix
             rand_idxs = np.random.permutation(n_shingles)
-            M_permuted = M[rand_idxs, :]
-
-            signature[i, :] = np.argmax(M_permuted, axis=0)
+            char_matrix_perm = char_matrix[rand_idxs, :]
+            # the minhash is the row-wise position of the first one
+            signature[idx, :] = np.argmax(char_matrix_perm, axis=0)
 
         return signature
 
