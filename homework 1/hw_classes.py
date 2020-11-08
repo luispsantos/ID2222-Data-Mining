@@ -1,5 +1,3 @@
-import itertools
-import operator
 import numpy as np
 import sympy
 from scipy import sparse
@@ -57,11 +55,10 @@ class MinHashing:
     def __init__(self, n_signature):
         self.n_signature = n_signature
 
-    def compute_signature(self, doc_shingles, n_shingles):
-        n_signature, n_docs = self.n_signature, len(doc_shingles)
+    def compute_signature_hash(self, char_matrix):
+        n_signature, (n_shingles, n_docs) = self.n_signature, char_matrix.shape
 
         # initialize the signature matrix with +infinity
-        hashes = np.zeros(n_signature, dtype=np.int32)
         signature = np.full((n_signature, n_docs), np.inf)
 
         # choose n_signature random parameters for a and b (both numbers are bounded by p)
@@ -69,25 +66,21 @@ class MinHashing:
         a = 2 * np.random.randint(0, p//2, n_signature) + 1  # a is always an odd number
         b = np.random.randint(0, p, n_signature)
 
-        # sort the document-shingle pairs and order by shingle
-        sorted_shingles = sorted((shingle, doc_id) for doc_id, doc in enumerate(doc_shingles) for shingle in doc)
-
-        for row_idx, (shingle, doc_ids) in enumerate(itertools.groupby(sorted_shingles, key=operator.itemgetter(0))):
+        # iterate over the rows (each row representing a shingle)
+        for row_idx, doc_ids in enumerate(char_matrix.tolil().rows):
             # compute n_signature independent hash functions
-            for i in range(n_signature):
-                hashes[i] = self.compute_universal_hash(row_idx, a[i], b[i], p, n_shingles)
-
+            hashes = self.compute_universal_hash(row_idx, a, b, p, n_shingles)
             #print(row_idx, hashes)
-            for _, doc_id in doc_ids:
-                for i in range(n_signature):
-                    if hashes[i] < signature[i, doc_id]:
-                        #print(f'({i}, {doc_id}): {signature[i, doc_id]} -> {hashes[i]}')
-                        signature[i, doc_id] = hashes[i]
+
+            # iterate over the documents which contain that shingle
+            for doc_id in doc_ids:
+                signature[:, doc_id] = np.where(hashes < signature[:, doc_id], hashes, signature[:, doc_id])
 
         return signature
 
     def compute_universal_hash(self, x, a, b, p, m):
         # for more information check: https://en.wikipedia.org/wiki/Universal_hashing#Hashing_integers
+        # for choice of parameters check also: https://stackoverflow.com/a/25104050/9244026
         return ((a*x + b) % p) % m
 
     def compute_signature_perm(self, char_matrix):
@@ -100,6 +93,7 @@ class MinHashing:
             # permute the rows of the characteristic matrix
             rand_idxs = np.random.permutation(n_shingles)
             char_matrix_perm = char_matrix[rand_idxs, :]
+
             # the minhash is the row-wise position of the first one
             signature[idx, :] = np.argmax(char_matrix_perm, axis=0)
 
