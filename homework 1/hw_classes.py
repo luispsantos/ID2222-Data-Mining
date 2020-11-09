@@ -63,7 +63,7 @@ class CompareSets:
 
 class MinHashing:
 
-    def __init__(self, n_signature):
+    def __init__(self, n_signature=500):
         self.n_signature = n_signature
 
     def compute_signature_hash(self, char_matrix):
@@ -81,7 +81,6 @@ class MinHashing:
         for row_idx, doc_ids in enumerate(char_matrix.tolil().rows):
             # compute n_signature independent hash functions
             hashes = self.compute_universal_hash(row_idx, a, b, p, n_shingles)
-            #print(row_idx, hashes)
 
             # iterate over the documents which contain that shingle
             for doc_id in doc_ids:
@@ -121,7 +120,7 @@ class CompareSignatures:
 
 class LSH:
 
-    def __init__(self, n_bands=10, sim_threshold=0.75):
+    def __init__(self, n_bands=100, sim_threshold=0.8):
         self.n_bands = n_bands
         self.sim_threshold = sim_threshold
 

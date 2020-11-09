@@ -7,7 +7,7 @@ docs = read_webhose_dataset('covid-blog-posts.zip', 100)
 #docs = read_webhose_dataset('covid-discussions.zip', 100)
 
 preprocessor = TextPreprocessor()
-shingling = Shingling()
+shingling = Shingling(10)
 min_hashing = MinHashing(500)
 lsh = LSH(100)
 
