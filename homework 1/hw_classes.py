@@ -1,6 +1,8 @@
+import itertools
 import numpy as np
 import sympy
 from scipy import sparse
+from collections import defaultdict
 
 
 class Shingling:
@@ -14,7 +16,7 @@ class Shingling:
         return unique_shingles
 
     def hash_shingles(self, shingle):
-        hashed_shingle = sum([pow(10, char_idx) * ord(character) for char_idx, character in enumerate(shingle)]) % (2**32)
+        hashed_shingle = sum([pow(100, char_idx) * ord(character) for char_idx, character in enumerate(shingle)]) % (2**32)
         return hashed_shingle
 
     # not part of the homework this is just to compare to un hashed similarities
@@ -106,4 +108,35 @@ class CompareSignatures:
         # the fraction of elements with equal minhash signatures
         return np.mean(signature[:, doc_1] == signature[:, doc_2])
 
-# class LSH
+
+class LSH:
+
+    def __init__(self, n_bands=10, sim_threshold=0.75):
+        self.n_bands = n_bands
+        self.sim_threshold = sim_threshold
+
+    def find_candidates(self, signature):
+        n_bands, (n_signature, n_docs) = self.n_bands, signature.shape
+
+        band_rows = n_signature // n_bands
+        candidate_pairs = set()
+        column_buckets = defaultdict(list)
+
+        for band_idx in range(n_bands):
+            # obtain the chunk of rows which correspond to a band
+            band = signature[band_idx * band_rows:(band_idx+1) * band_rows]
+
+            # iterate over the columns which belong to this band
+            for doc_id, column in enumerate(band.T):
+                # store all documents in this band with identical hashes
+                # we must convert the vector to a tuple so it's hashable
+                column_buckets[tuple(column)].append(doc_id)
+
+            for doc_ids in column_buckets.values():
+                pairwise_combinations = itertools.combinations(doc_ids, 2)
+                candidate_pairs.update(pairwise_combinations)
+
+            # clear the buckets - each band uses an independent hash table
+            column_buckets.clear()
+
+        return candidate_pairs
