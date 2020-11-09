@@ -1,3 +1,4 @@
+import math
 import itertools
 import numpy as np
 import sympy
@@ -45,10 +46,18 @@ class Shingling:
 
 class CompareSets:
 
-    # intersection / union
-    def jaccard_similarity(self, set_1, set_2):
+    # intersection / union over sets
+    @staticmethod
+    def jaccard_similarity(set_1, set_2):
         set_1, set_2 = set(set_1), set(set_2)
         similarity = len(set_1.intersection(set_2)) / len(set_1.union(set_2))
+        return similarity
+
+    # intersection / union over boolean arrays
+    @staticmethod
+    def jaccard_similarity_np(arr_1, arr_2):
+        arr_1, arr_2 = np.asarray(arr_1), np.asarray(arr_2)
+        similarity = np.logical_and(arr_1, arr_2).sum() / np.logical_or(arr_1, arr_2).sum()
         return similarity
 
 
@@ -104,7 +113,8 @@ class MinHashing:
 
 class CompareSignatures:
 
-    def signature_similarity(self, signature, doc_1, doc_2):
+    @staticmethod
+    def signature_similarity(signature, doc_1, doc_2):
         # the fraction of elements with equal minhash signatures
         return np.mean(signature[:, doc_1] == signature[:, doc_2])
 
@@ -115,16 +125,28 @@ class LSH:
         self.n_bands = n_bands
         self.sim_threshold = sim_threshold
 
+    def find_similar(self, signature):
+        # find the candidate pairs by applying LSH
+        candidate_pairs = self.find_candidates(signature)
+        similar_documents = []
+
+        for candidate in candidate_pairs:
+            doc_similarity = CompareSignatures.signature_similarity(signature, *candidate)
+            if doc_similarity > self.sim_threshold:
+                similar_documents.append(candidate)
+
+        return similar_documents
+
     def find_candidates(self, signature):
         n_bands, (n_signature, n_docs) = self.n_bands, signature.shape
+        rows_band = math.ceil(n_signature / n_bands)
 
-        band_rows = n_signature // n_bands
         candidate_pairs = set()
         column_buckets = defaultdict(list)
 
         for band_idx in range(n_bands):
             # obtain the chunk of rows which correspond to a band
-            band = signature[band_idx * band_rows:(band_idx+1) * band_rows]
+            band = signature[band_idx*rows_band:(band_idx+1)*rows_band]
 
             # iterate over the columns which belong to this band
             for doc_id, column in enumerate(band.T):
