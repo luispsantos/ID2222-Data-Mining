@@ -4,13 +4,14 @@ from collections import defaultdict
 
 class Apriori:
 
-    def __init__(self, data='T10I4D100K.dat', s=10000):
+    def __init__(self, data, s):
         self.data= data
         self.s=s
         self.C_k=defaultdict(int)
         self.L={}
 
     def first_pass(self, item):
+        # add one to the count of this itemset(size 1)
         self.C_k[item]+=1
         return item
 
@@ -32,59 +33,53 @@ class Apriori:
             C_k.pop(i, None)
         return C_k
 
-    # enkel model tills vidare
+    # Simple version it add the
     def subset(self, Ck, t,k):
         return [c for c in itertools.combinations(t, k) if c in Ck]
 
-    def algorithm(self, print_=True):
+    def algorithm(self, verbose):
+        t_k = time.time()
         basket_list=[]
         with open(self.data, 'r') as f:
             for basket in f:
                 basket_list.append([self.first_pass(int(item)) for item in basket.split()])
+        # filter out itemsets that don't have at least support s
         self.L[1]={(item,):self.C_k[item] for item in sorted(self.C_k) if self.C_k[item] >= self.s}
         k=1
         while len(self.L[k])!=0:
+            if verbose:
+                print(k,"- itemset time",time.time()-t_k,"size of L_"+str(k)+"  is ",len(self.L[k]))
             t_k=time.time()
             k+=1
+            # gets all candidates
             C_k=self.apriori_gen(self.L[k-1],k)
             for t in basket_list:
+                # gets all candidates contained in t
                 C_t=self.subset(C_k,t,k)
+                # adds one to the count of all of these candidates
                 for c in C_t:
                     C_k[c]+=1
+            # filter out itemsets that don't have at least support s
             self.L[k]={item:C_k[item] for item in C_k if C_k[item]>=self.s}
-            if print_:
-                print(k,"- itemset time",time.time()-t_k,"L_"+str(k)+"  is ",len(self.L[k]))
-        # the last one is empty should we remove it? ->  self.L.pop(len(self.L))
+        # the last one is empty that's why  we remove it!
+        self.L.pop(len(self.L))
         return self.L
 
-class FindAR:
+class AssociationRules:
 
-    def find_association_rules(self,L, c=0.5, print_=True, option=1):
+    def find(self, L, c, verbose, option=1):
         if option==1:
-            rules=[[subset,k1]for k in range(2, len(L)) for key in L[k].keys() for subset in
-                   itertools.combinations(key,k-1) for k1 in key if k1 not in subset if c<L[k][key]/L[k-1][subset]]
+            # add the associationrule X -> Y  to the list of rules if count(X+Y)/count(X) > c, size(Y)=1
+            rules=[[subset,k1,L[k][key]/L[k-1][subset]]for k in range(2, len(L)+1) for key in L[k].keys() for subset in
+                   itertools.combinations(key,k-1) for k1 in key if k1 not in subset if c<=L[k][key]/L[k-1][subset]]
 
         elif option==2:
-            rules=[[subset,{k1 for k1 in key if k1 not in subset}] for k in range(2, len(L)) for k_ in range(1,k)
-                   for key in L[k].keys() for subset in itertools.combinations(key,k_) if c<L[k][key]/L[k_][subset]]
+            # add the associationrule X -> Y  to the list of rules if count(X+Y)/count(X) > c, size(Y)>=1
+            rules=[[subset,{k1 for k1 in key if k1 not in subset}] for k in range(2, len(L)+1) for k_ in range(1,k)
+                   for key in L[k].keys() for subset in itertools.combinations(key,k_) if c<=L[k][key]/L[k_][subset]]
 
-        if print_:
+        if verbose:
             for rule in rules:
                 print(rule[0],"->",rule[1])
         return rules
 
-t=time.time()
-L_k=Apriori(data='T10I4D100K.dat', s=1000).algorithm()
-print(time.time()-t )
-
-t=time.time()
-FindAR().find_association_rules(L_k, option=2)
-print(time.time()-t)
-# original for find assosiation rule
-# without last pop
-# for k in range(2, len(L)):
-#     for key in L[k].keys():
-#         subsets= [subset for subset in itertools.combinations(key,k-1)]
-#         for subset in subsets:
-#             if c<L[k][key]/L[k-1][subset]:
-#                 print(subset,"->",[k1 for k1 in key if k1 not in subset][0],": ",k,L[k][key]/L[k-1][subset])
