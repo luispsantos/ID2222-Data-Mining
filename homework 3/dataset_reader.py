@@ -20,7 +20,7 @@ def read_snap_dataset(dataset_file):
                 if src_node == dst_node:
                     continue  # disallow self-referencing nodes with edges which point to themselves
                 elif src_node > dst_node:
-                    dst_node, src_node = src_node, dst_node  # simplifies dealing with undirected graphs
+                    dst_node, src_node = src_node, dst_node  # simplifies dealing with directed graphs
 
                 yield src_node, dst_node
 
