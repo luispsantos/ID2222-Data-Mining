@@ -17,10 +17,15 @@ def read_snap_dataset(dataset_file):
                 continue  # this line is a comment, we can skip it
             else:
                 src_node, dst_node = int(elems[0]), int(elems[1])
+                if src_node == dst_node:
+                    continue  # disallow self-referencing nodes with edges which point to themselves
+                elif src_node > dst_node:
+                    dst_node, src_node = src_node, dst_node  # simplifies dealing with undirected graphs
+
                 yield src_node, dst_node
 
 
 if __name__ == '__main__':
-    dataset_file = 'web-NotreDame.txt.gz'
+    dataset_file = 'web-Stanford.txt.gz'
     for src_node, dst_node in read_snap_dataset(dataset_file):
         print(f'edge: {src_node} -> {dst_node}')
