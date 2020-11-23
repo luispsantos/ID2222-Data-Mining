@@ -13,6 +13,7 @@ class SubGraph:
         self.edge_set = set()
 
     def add_edge(self, u, v):
+        # add both edge directions as if subgraph were an undirected graph
         self.adj_list[u].add(v)
         self.adj_list[v].add(u)
         self.edge_set.add((u, v))
@@ -22,6 +23,7 @@ class SubGraph:
             print(f'N({u}) = {self.adj_list[u]}, N({v}) = {self.adj_list[v]}')
 
     def remove_edge(self, u, v):
+        # remove both edge directions as if subgraph were an undirected graph
         self.adj_list[u].remove(v)
         self.adj_list[v].remove(u)
         self.edge_set.remove((u, v))
@@ -80,8 +82,8 @@ class TriestBase:
 
         return False
 
-    def update_counters(self, operation, u, v):
-        # make sure the subgraph contains both nodes the edge leads to
+    def update_counters(self, operator, u, v):
+        # make sure the subgraph contains both nodes this edge leads to
         if not self.subgraph.has_node(u) or not self.subgraph.has_node(v):
             return
 
@@ -89,8 +91,7 @@ class TriestBase:
         neighbors_v = self.subgraph.get_neighbors(v)
 
         shared_neighbors = neighbors_u & neighbors_v
-        incr_value = 1 if operation == '+' else -1
-        #print(shared_neighbors, neighbors_u, neighbors_v, self.global_counter)
+        incr_value = 1 if operator == '+' else -1
 
         # update the global/local counters of the shared neighborhood
         for c in shared_neighbors:
@@ -99,7 +100,7 @@ class TriestBase:
             self.local_counters[u] += incr_value
             self.local_counters[v] += incr_value
 
-        if operation == '-':
+        if operator == '-':
             # delete the local counters containing a value of 0
             for c in itertools.chain(shared_neighbors, (u, v)):
                 if not self.local_counters[c]:
@@ -113,10 +114,7 @@ class TriestBase:
         t = 0
 
         for u, v in edge_stream:
-            if u == v:
-                continue
-            elif u > v:
-                v, u = u, v
+            # make sure this edge is not present in our subgraph
             if self.subgraph.has_edge(u, v):
                 continue
 
@@ -125,10 +123,16 @@ class TriestBase:
                 self.subgraph.add_edge(u, v)
                 self.update_counters('+', u, v)
 
+        # compute estimate for the global/local triangle counts
         eta_t = self.compute_eta(t)
         global_triangles = int(eta_t * self.global_counter)
+
+        print(f'M: {self.M}, dataset_name: {dataset_file}')
+        print(f'Global triangles estimate: {global_triangles}')
+
         if self.verbose:
-            print(f'Global triangles estimate: {global_triangles}')
+            local_triangles = {node: int(eta_t * counter) for node, counter in self.local_counters.items()}
+            print(f'Local triangles estimate: {local_triangles}')
 
         return global_triangles
 
@@ -161,7 +165,7 @@ class TriestImpr:
         return False
 
     def update_counters(self, t, u, v):
-        # make sure the subgraph contains both nodes the edge leads to
+        # make sure the subgraph contains both nodes this edge leads to
         if not self.subgraph.has_node(u) or not self.subgraph.has_node(v):
             return
 
@@ -186,10 +190,7 @@ class TriestImpr:
         t = 0
 
         for u, v in edge_stream:
-            if u == v:
-                continue
-            elif u > v:
-                v, u = u, v
+            # make sure this edge is not present in our subgraph
             if self.subgraph.has_edge(u, v):
                 continue
 
@@ -198,8 +199,14 @@ class TriestImpr:
             if self.sample_edge(t):
                 self.subgraph.add_edge(u, v)
 
+        # compute estimate for the global/local triangle counts
         global_triangles = int(self.global_counter)
+
+        print(f'M: {self.M}, dataset_name: {dataset_file}')
+        print(f'Global triangles estimate: {global_triangles}')
+
         if self.verbose:
-            print(f'Global triangles estimate: {global_triangles}')
+            local_triangles = {node: int(counter) for node, counter in self.local_counters.items()}
+            print(f'Local triangles estimate: {local_triangles}')
 
         return global_triangles
