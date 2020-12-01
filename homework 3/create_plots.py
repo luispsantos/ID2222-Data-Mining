@@ -21,6 +21,7 @@ def create_plot(triest_class, plot_title, dataset_file, m_values, triangle_count
 
 
 if __name__ == '__main__':
+    # dictionary format - dataset_file: (list of M values, true number of global triangles)
     dataset_files = {
         'web-Stanford.txt.gz': ([5000, 7500, 10000, 15000, 20000, 25000, 40000], 11329473),
         #'web-Google.txt.gz': ([5000, 7500, 10000, 15000, 20000, 25000, 40000], 13391903),
