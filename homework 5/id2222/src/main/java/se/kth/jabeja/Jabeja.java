@@ -49,7 +49,7 @@ public class Jabeja {
    * Simulated annealing cooling function
    */
   private void saCoolDown() {
-    // TODO for second task
+    // decrease the temperature over time
     if (T > 1)
       T -= config.getDelta();
     if (T < 1)
@@ -67,17 +67,23 @@ public class Jabeja {
     if (config.getNodeSelectionPolicy() == NodeSelectionPolicy.HYBRID
             || config.getNodeSelectionPolicy() == NodeSelectionPolicy.LOCAL) {
       // swap with random neighbors
-      // TODO
+      partner = findPartner(nodeId, getNeighbors(nodep));
     }
 
     if (config.getNodeSelectionPolicy() == NodeSelectionPolicy.HYBRID
             || config.getNodeSelectionPolicy() == NodeSelectionPolicy.RANDOM) {
       // if local policy fails then randomly sample the entire graph
-      // TODO
+      if (partner == null)
+        partner = findPartner(nodeId, getSample(nodeId));
     }
 
     // swap the colors
-    // TODO
+    if (partner != null) {
+      int colorp = nodep.getColor();
+      nodep.setColor(partner.getColor());
+      partner.setColor(colorp);
+      numberOfSwaps++;
+    }
   }
 
   public Node findPartner(int nodeId, Integer[] nodes) {
@@ -88,20 +94,21 @@ public class Jabeja {
     Node bestPartner = null;
     double highestBenefit = 0;
 
-    // Find best node as swap partner for node p
+    // find best node as swap partner for node p
     for (int node : nodes) {
       Node nodeq = entireGraph.get(node);
 
-      // Compute dpp and dqq
+      // compute dpp and dqq
       int dpp = getDegree(nodep, nodep.getColor());
       int dqq = getDegree(nodeq, nodeq.getColor());
       double oldValue = Math.pow(dpp, alpha) + Math.pow(dqq, alpha);
 
-      // Compute dpp and dqq
+      // compute dpp and dqq
       int dpq = getDegree(nodep, nodeq.getColor());
       int dqp = getDegree(nodeq, nodep.getColor());
       double newValue = Math.pow(dpq, alpha) + Math.pow(dqq, alpha);
 
+      // update the best partner and highest benefit
       if (newValue * T > oldValue && newValue > highestBenefit) {
         bestPartner = nodeq;
         highestBenefit = newValue;
