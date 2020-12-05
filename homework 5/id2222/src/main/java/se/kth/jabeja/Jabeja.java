@@ -46,9 +46,9 @@ public class Jabeja {
   }
 
   /**
-   * Simulated analealing cooling function
+   * Simulated annealing cooling function
    */
-  private void saCoolDown(){
+  private void saCoolDown() {
     // TODO for second task
     if (T > 1)
       T -= config.getDelta();
@@ -57,7 +57,7 @@ public class Jabeja {
   }
 
   /**
-   * Sample and swap algorith at node p
+   * Sample and swap algorithm at node p
    * @param nodeId
    */
   private void sampleAndSwap(int nodeId) {
@@ -80,29 +80,48 @@ public class Jabeja {
     // TODO
   }
 
-  public Node findPartner(int nodeId, Integer[] nodes){
+  public Node findPartner(int nodeId, Integer[] nodes) {
 
     Node nodep = entireGraph.get(nodeId);
+    float alpha = config.getAlpha();
 
     Node bestPartner = null;
     double highestBenefit = 0;
 
-    // TODO
+    // Find best node as swap partner for node p
+    for (int node : nodes) {
+      Node nodeq = entireGraph.get(node);
+
+      // Compute dpp and dqq
+      int dpp = getDegree(nodep, nodep.getColor());
+      int dqq = getDegree(nodeq, nodeq.getColor());
+      double oldValue = Math.pow(dpp, alpha) + Math.pow(dqq, alpha);
+
+      // Compute dpp and dqq
+      int dpq = getDegree(nodep, nodeq.getColor());
+      int dqp = getDegree(nodeq, nodep.getColor());
+      double newValue = Math.pow(dpq, alpha) + Math.pow(dqq, alpha);
+
+      if (newValue * T > oldValue && newValue > highestBenefit) {
+        bestPartner = nodeq;
+        highestBenefit = newValue;
+      }
+    }
 
     return bestPartner;
   }
 
   /**
-   * The the degreee on the node based on color
+   * The degree of the node based on color
    * @param node
    * @param colorId
    * @return how many neighbors of the node have color == colorId
    */
-  private int getDegree(Node node, int colorId){
+  private int getDegree(Node node, int colorId) {
     int degree = 0;
-    for(int neighborId : node.getNeighbours()){
+    for (int neighborId : node.getNeighbours()) {
       Node neighbor = entireGraph.get(neighborId);
-      if(neighbor.getColor() == colorId){
+      if (neighbor.getColor() == colorId) {
         degree++;
       }
     }
