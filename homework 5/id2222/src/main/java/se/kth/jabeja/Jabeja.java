@@ -2,6 +2,7 @@ package se.kth.jabeja;
 
 import org.apache.log4j.Logger;
 import se.kth.jabeja.config.Config;
+import se.kth.jabeja.config.AnnealingSelectionPolicy;
 import se.kth.jabeja.config.NodeSelectionPolicy;
 import se.kth.jabeja.io.FileIO;
 import se.kth.jabeja.rand.RandNoGenerator;
@@ -18,6 +19,8 @@ public class Jabeja {
   private int numberOfSwaps;
   private int round;
   private float T;
+  private Random random = new Random();
+  private boolean linearAnnealing = false;
   private boolean resultFileCreated = false;
 
   //-------------------------------------------------------------------
@@ -28,6 +31,9 @@ public class Jabeja {
     this.numberOfSwaps = 0;
     this.config = config;
     this.T = config.getTemperature();
+    this.random.setSeed(config.getSeed());
+    this.linearAnnealing = config.getAnnealingPolicy() == AnnealingSelectionPolicy.LINEAR;
+
   }
 
 
@@ -38,10 +44,10 @@ public class Jabeja {
         sampleAndSwap(id);
       }
 
-      //one cycle for all nodes have completed.
-      //reduce the temperature
+      // one cycle for all nodes has completed, so reduce the temperature
       saCoolDown();
       report();
+
     }
   }
 
@@ -49,11 +55,17 @@ public class Jabeja {
    * Simulated annealing cooling function
    */
   private void saCoolDown() {
-    // decrease the temperature over time
-    if (T > 1)
+    float tMin = linearAnnealing ? 1.0f : 0.0001f;
+
+    if (T > tMin && linearAnnealing) {
+      // decrease temperature linearly over time
       T -= config.getDelta();
-    if (T < 1)
-      T = 1;
+    else if (T > tMin && !linearAnnealing) {
+      // decrease temperature exponentially over time
+      T *= config.getDelta();
+    } else {
+      T = tMin;
+    }
   }
 
   /**
@@ -106,12 +118,28 @@ public class Jabeja {
       // compute dpp and dqq
       int dpq = getDegree(nodep, nodeq.getColor());
       int dqp = getDegree(nodeq, nodep.getColor());
-      double newValue = Math.pow(dpq, alpha) + Math.pow(dqq, alpha);
+      double newValue = Math.pow(dpq, alpha) + Math.pow(dqp, alpha);
+
+      boolean updateSolution = false;
+      double acceptanceProb, currentBenefit = 0;
+
+      if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.LINEAR) {
+        currentBenefit = newValue;
+        updateSolution = newValue * T > oldValue;
+      } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.EXPONENTIAL) {
+        acceptanceProb = Math.exp((newValue - oldValue) / T);
+        currentBenefit = acceptanceProb;
+        updateSolution = acceptanceProb > random.nextDouble();
+      } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.IMPROVED_EXP) {
+        acceptanceProb = Math.exp((1 / oldValue - 1 / newValue) / T);
+        currentBenefit = acceptanceProb;
+        updateSolution = acceptanceProb > random.nextDouble();
+      }
 
       // update the best partner and highest benefit
-      if (newValue * T > oldValue && newValue > highestBenefit) {
+      if (currentBenefit > highestBenefit && newValue != oldValue && updateSolution) {
         bestPartner = nodeq;
-        highestBenefit = newValue;
+        highestBenefit = currentBenefit;
       }
     }
 
