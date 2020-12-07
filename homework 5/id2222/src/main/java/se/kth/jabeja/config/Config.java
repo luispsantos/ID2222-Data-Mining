@@ -10,12 +10,18 @@ public class Config {
   private Integer uniformRandomSampleSize;
   private String graphFile;
   private String outputDir;
+  private AnnealingSelectionPolicy annealingPolicy;
   private GraphInitColorPolicy initColorPolicy;
   private NodeSelectionPolicy nodeSelectionPolicy;
   private Float alpha;
 
   public Config setAlpha(Float alpha) {
     this.alpha = alpha;
+    return this;
+  }
+
+  public Config setAnnealingSelectionPolicy(AnnealingSelectionPolicy policy) {
+    this.annealingPolicy = policy;
     return this;
   }
 
@@ -128,6 +134,13 @@ public class Config {
       throw new NullPointerException("Graph file path is not set");
     }
     return graphFile;
+  }
+
+  public AnnealingSelectionPolicy getAnnealingPolicy() {
+    if (annealingPolicy == null) {
+      throw new NullPointerException("Annealing policy is not defined.");
+    }
+    return annealingPolicy;
   }
 
   public GraphInitColorPolicy getGraphInitialColorPolicy() {

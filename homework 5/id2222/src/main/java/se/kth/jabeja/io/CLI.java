@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import se.kth.jabeja.config.Config;
+import se.kth.jabeja.config.AnnealingSelectionPolicy;
 import se.kth.jabeja.config.GraphInitColorPolicy;
 import se.kth.jabeja.config.NodeSelectionPolicy;
 
@@ -37,17 +38,21 @@ public class CLI {
   @Option(name = "-seed", usage = "Seed.")
   private int SEED = 0;
 
-  @Option(name = "-alpha", usage = "Alpah parameter")
+  @Option(name = "-alpha", usage = "Alpha parameter")
   private float ALPHA = 2;
 
   @Option(name = "-randNeighborsSampleSize", usage = "Number of random neighbors sample size.")
   private int randNeighborsSampleSize = 3;
 
-  @Option(name = "-graphInitColorSelectionPolicy", usage = "Initial color celection policy. Supported, RANDOM, ROUND_ROBIN, BATCH")
+  @Option(name = "-annealingSelectionPolicy", usage = "Annealing selection policy. Supported, LINEAR, EXPONENTIAL, IMPROVED_EXP")
+  private String ANNEALING_POLICY = "LINEAR";
+  private AnnealingSelectionPolicy annealingPolicy = AnnealingSelectionPolicy.LINEAR;
+
+  @Option(name = "-graphInitColorSelectionPolicy", usage = "Initial color selection policy. Supported, RANDOM, ROUND_ROBIN, BATCH")
   private String GRAPH_INIT_COLOR_SELECTION_POLICY = "ROUND_ROBIN";
   private GraphInitColorPolicy graphInitColorSelectionPolicy = GraphInitColorPolicy.ROUND_ROBIN;
 
-  @Option(name = "-nodeSelectionPolicy", usage = "Node selection plicy. Supported, RANDOM, LOCAL, HYBRID")
+  @Option(name = "-nodeSelectionPolicy", usage = "Node selection policy. Supported, RANDOM, LOCAL, HYBRID")
   private String NODE_SELECTION_POLICY = "HYBRID";
   private NodeSelectionPolicy nodeSelectionPolicy = NodeSelectionPolicy.HYBRID;
 
@@ -83,6 +88,16 @@ public class CLI {
         throw new IllegalArgumentException("Node selection policy is not supported");
       }
 
+      if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.LINEAR.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.LINEAR;
+      } else if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.EXPONENTIAL.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.EXPONENTIAL;
+      } else if (ANNEALING_POLICY.compareToIgnoreCase(AnnealingSelectionPolicy.IMPROVED_EXP.toString()) == 0) {
+        annealingPolicy = AnnealingSelectionPolicy.IMPROVED_EXP;
+      } else {
+        throw new IllegalArgumentException("Annealing selection policy is not supported");
+      }
+
     } catch (Exception e) {
       logger.error(e.getMessage());
       parser.printUsage(System.err);
@@ -107,6 +122,7 @@ public class CLI {
             .setSeed(SEED)
             .setTemperature(TEMPERATURE)
             .setGraphFilePath(GRAPH)
+            .setAnnealingSelectionPolicy(annealingPolicy)
             .setNodeSelectionPolicy(nodeSelectionPolicy)
             .setGraphInitialColorPolicy(graphInitColorSelectionPolicy)
             .setOutputDir(OUTPUT_DIR)
