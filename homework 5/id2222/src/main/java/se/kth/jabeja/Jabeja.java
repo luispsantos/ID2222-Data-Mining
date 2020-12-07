@@ -64,14 +64,15 @@ public class Jabeja {
   private void saCoolDown() {
     float tMin = linearAnnealing ? 1.0f : 0.0001f;
 
-    if (T > tMin && linearAnnealing)
+    if (T > tMin && linearAnnealing) {
       // decrease temperature linearly over time
       T -= config.getDelta();
-    else if (T > tMin && !linearAnnealing)
+    } else if (T > tMin && !linearAnnealing) {
       // decrease temperature exponentially over time
       T *= config.getDelta();
-    else
+    } else {
       T = tMin;
+    }
   }
 
   /**
@@ -127,23 +128,25 @@ public class Jabeja {
       double newValue = Math.pow(dpq, alpha) + Math.pow(dqp, alpha);
 
       boolean updateSolution = false;
-      double acceptanceProb, currentBenefit = 0;
+      double currentBenefit = 0, acceptanceProb = 0;
 
-      if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.LINEAR) {
+      if (linearAnnealing) {
         currentBenefit = newValue;
         updateSolution = newValue * T > oldValue;
-      } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.EXPONENTIAL) {
-        acceptanceProb = Math.exp((newValue - oldValue) / T);
+      } else {
+        if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.EXPONENTIAL) {
+          // acceptance probability: a_p = e^((new - old) / T)
+          acceptanceProb = Math.exp((newValue - oldValue) / T);
+        } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.IMPROVED_EXP) {
+          // acceptance probability: a_p = e^((1/old - 1/new) / T)
+          acceptanceProb = Math.exp((1 / oldValue - 1 / newValue) / T);
+        }
         currentBenefit = acceptanceProb;
-        updateSolution = acceptanceProb > random.nextDouble();
-      } else if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.IMPROVED_EXP) {
-        acceptanceProb = Math.exp((1 / oldValue - 1 / newValue) / T);
-        currentBenefit = acceptanceProb;
-        updateSolution = acceptanceProb > random.nextDouble();
+        updateSolution = acceptanceProb > random.nextDouble() && newValue != oldValue;
       }
 
       // update the best partner and highest benefit
-      if (currentBenefit > highestBenefit && newValue != oldValue && updateSolution) {
+      if (currentBenefit > highestBenefit && updateSolution) {
         bestPartner = nodeq;
         highestBenefit = currentBenefit;
       }
