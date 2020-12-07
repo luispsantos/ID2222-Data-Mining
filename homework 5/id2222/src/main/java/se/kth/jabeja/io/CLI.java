@@ -56,6 +56,12 @@ public class CLI {
   private String NODE_SELECTION_POLICY = "HYBRID";
   private NodeSelectionPolicy nodeSelectionPolicy = NodeSelectionPolicy.HYBRID;
 
+  @Option(name = "-restart-temp", usage = "Restart temperature if edge cut has remained constant for ROUNDS_RESTART rounds.")
+  private boolean restartTemp = false;
+
+  @Option(name = "-rounds-restart", usage = "Number of rounds with constant edge cut seen before temperature is restarted.")
+  private int roundsRestart = 100;
+
   @Option(name = "-graph", usage = "Location of the input graph.")
   private static String GRAPH = "./graphs/ws-250.graph";
 
@@ -125,6 +131,8 @@ public class CLI {
             .setAnnealingSelectionPolicy(annealingPolicy)
             .setNodeSelectionPolicy(nodeSelectionPolicy)
             .setGraphInitialColorPolicy(graphInitColorSelectionPolicy)
+            .setRestartTemp(restartTemp)
+            .setRoundsRestart(roundsRestart)
             .setOutputDir(OUTPUT_DIR)
             .setAlpha(ALPHA);
   }

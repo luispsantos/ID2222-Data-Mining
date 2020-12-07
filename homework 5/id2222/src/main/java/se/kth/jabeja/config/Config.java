@@ -14,6 +14,8 @@ public class Config {
   private GraphInitColorPolicy initColorPolicy;
   private NodeSelectionPolicy nodeSelectionPolicy;
   private Float alpha;
+  private Boolean restartTemp;
+  private Integer roundsRestart;
 
   public Config setAlpha(Float alpha) {
     this.alpha = alpha;
@@ -80,6 +82,16 @@ public class Config {
     return this;
   }
 
+  public Config setRestartTemp(Boolean restartTemp) {
+    this.restartTemp = restartTemp;
+    return this;
+  }
+
+  public Config setRoundsRestart(Integer roundsRestart) {
+    this.roundsRestart = roundsRestart;
+    return this;
+  }
+
   public Integer getNumPartitions() {
     if (numPartitions == null) {
       throw new NullPointerException("Num partitions is not set");
@@ -127,6 +139,20 @@ public class Config {
       throw new NullPointerException("Random list size is not set");
     }
     return uniformRandomSampleSize;
+  }
+
+  public Boolean getRestartTemp() {
+    if (restartTemp == null) {
+      throw new NullPointerException("Restart temperature is not set");
+    }
+    return restartTemp;
+  }
+
+  public Integer getRoundsRestart() {
+    if (roundsRestart == null) {
+      throw new NullPointerException("Rounds restart is not set");
+    }
+    return roundsRestart;
   }
 
   public String getGraphFilePath() {
