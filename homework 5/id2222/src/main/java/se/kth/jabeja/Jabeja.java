@@ -22,6 +22,10 @@ public class Jabeja {
   private Random random = new Random();
   private boolean linearAnnealing = false;
   private boolean resultFileCreated = false;
+  // parameters for restarting the temperature
+  private int sameEdgeCutRounds = 0;
+  private int currentEdgeCut = 0;
+  private int previousEdgeCut = 0;
 
   //-------------------------------------------------------------------
   public Jabeja(HashMap<Integer, Node> graph, Config config) {
@@ -34,6 +38,8 @@ public class Jabeja {
     this.random.setSeed(config.getSeed());
     this.linearAnnealing = config.getAnnealingPolicy() == AnnealingSelectionPolicy.LINEAR;
 
+    if (!linearAnnealing)
+      config.setTemperature(1.0f);
   }
 
 
@@ -47,6 +53,7 @@ public class Jabeja {
       // one cycle for all nodes has completed, so reduce the temperature
       saCoolDown();
       report();
+      restartTemperature();
 
     }
   }
@@ -57,15 +64,14 @@ public class Jabeja {
   private void saCoolDown() {
     float tMin = linearAnnealing ? 1.0f : 0.0001f;
 
-    if (T > tMin && linearAnnealing) {
+    if (T > tMin && linearAnnealing)
       // decrease temperature linearly over time
       T -= config.getDelta();
-    else if (T > tMin && !linearAnnealing) {
+    else if (T > tMin && !linearAnnealing)
       // decrease temperature exponentially over time
       T *= config.getDelta();
-    } else {
+    else
       T = tMin;
-    }
   }
 
   /**
@@ -144,6 +150,27 @@ public class Jabeja {
     }
 
     return bestPartner;
+  }
+
+  /**
+   * Restart temperature if edge cut has converged (may be a local minimum)
+   */
+  private void restartTemperature() {
+    // only restart the temperature if that flag is set
+    if (!config.getRestartTemp()) return;
+
+    // check if the edge cut has remained constant between rounds
+    if (currentEdgeCut == previousEdgeCut) {
+      sameEdgeCutRounds++;
+      if (sameEdgeCutRounds == config.getRoundsRestart()) {
+        T = config.getTemperature();
+        sameEdgeCutRounds = 0;
+      }
+    } else {
+      sameEdgeCutRounds = 0;
+    }
+    // update to the current edge cut
+    previousEdgeCut = currentEdgeCut;
   }
 
   /**
@@ -256,6 +283,7 @@ public class Jabeja {
     }
 
     int edgeCut = grayLinks / 2;
+    currentEdgeCut = edgeCut;
 
     logger.info("round: " + round +
             ", edge cut:" + edgeCut +
