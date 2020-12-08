@@ -22,6 +22,7 @@ public class Jabeja {
   private Random random = new Random();
   private boolean linearAnnealing = false;
   private boolean resultFileCreated = false;
+  private String outputFilePath = null;
   // parameters for restarting the temperature
   private int sameEdgeCutRounds = 0;
   private int currentEdgeCut = 0;
@@ -167,6 +168,8 @@ public class Jabeja {
       sameEdgeCutRounds++;
       if (sameEdgeCutRounds == config.getRoundsRestart()) {
         T = config.getTemperature();
+        // decaying delta over time may converge to better solutions
+        config.setDelta(config.getDelta() / (1+config.getDeltaDecay()));
         sameEdgeCutRounds = 0;
       }
     } else {
@@ -298,21 +301,25 @@ public class Jabeja {
 
   private void saveToFile(int edgeCuts, int migrations) throws IOException {
     String delimiter = "\t\t";
-    String outputFilePath;
 
     //output file name
-    File inputFile = new File(config.getGraphFilePath());
-    outputFilePath = config.getOutputDir() +
-            File.separator +
-            inputFile.getName() + "_" +
-            "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
-            "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
-            "T" + "_" + config.getTemperature() + "_" +
-            "D" + "_" + config.getDelta() + "_" +
-            "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
-            "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
-            "A" + "_" + config.getAlpha() + "_" +
-            "R" + "_" + config.getRounds() + ".txt";
+    if (outputFilePath == null) {
+      File inputFile = new File(config.getGraphFilePath());
+      outputFilePath = config.getOutputDir() +
+              File.separator +
+              inputFile.getName() + "_" +
+              "AP" + "_" + config.getAnnealingPolicy() + "_" +
+              "NS" + "_" + config.getNodeSelectionPolicy() + "_" +
+              "GICP" + "_" + config.getGraphInitialColorPolicy() + "_" +
+              "T" + "_" + config.getTemperature() + "_" +
+              "D" + "_" + config.getDelta() + "_" +
+              "RNSS" + "_" + config.getRandomNeighborSampleSize() + "_" +
+              "URSS" + "_" + config.getUniformRandomSampleSize() + "_" +
+              "RT" + "_" + config.getRestartTemp() + "_" +
+              "DD" + "_" + config.getDeltaDecay() + "_" +
+              "A" + "_" + config.getAlpha() + "_" +
+              "R" + "_" + config.getRounds() + ".txt";
+    }
 
     if (!resultFileCreated) {
       File outputDir = new File(config.getOutputDir());
