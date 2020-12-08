@@ -62,6 +62,9 @@ public class CLI {
   @Option(name = "-rounds-restart", usage = "Number of rounds with constant edge cut seen before temperature is restarted.")
   private int roundsRestart = 100;
 
+  @Option(name = "-delta-decay", usage = "Decay rate for delta parameter which is applied each time the temperature is restarted.")
+  private float deltaDecay = 0;
+
   @Option(name = "-graph", usage = "Location of the input graph.")
   private static String GRAPH = "./graphs/ws-250.graph";
 
@@ -133,6 +136,7 @@ public class CLI {
             .setGraphInitialColorPolicy(graphInitColorSelectionPolicy)
             .setRestartTemp(restartTemp)
             .setRoundsRestart(roundsRestart)
+            .setDeltaDecay(deltaDecay)
             .setOutputDir(OUTPUT_DIR)
             .setAlpha(ALPHA);
   }

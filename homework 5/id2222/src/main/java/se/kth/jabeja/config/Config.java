@@ -16,6 +16,7 @@ public class Config {
   private Float alpha;
   private Boolean restartTemp;
   private Integer roundsRestart;
+  private Float deltaDecay;
 
   public Config setAlpha(Float alpha) {
     this.alpha = alpha;
@@ -92,6 +93,11 @@ public class Config {
     return this;
   }
 
+  public Config setDeltaDecay(Float deltaDecay) {
+    this.deltaDecay = deltaDecay;
+    return this;
+  }
+
   public Integer getNumPartitions() {
     if (numPartitions == null) {
       throw new NullPointerException("Num partitions is not set");
@@ -143,7 +149,7 @@ public class Config {
 
   public Boolean getRestartTemp() {
     if (restartTemp == null) {
-      throw new NullPointerException("Restart temperature is not set");
+      throw new NullPointerException("Restart temperature flag is not set");
     }
     return restartTemp;
   }
@@ -153,6 +159,13 @@ public class Config {
       throw new NullPointerException("Rounds restart is not set");
     }
     return roundsRestart;
+  }
+
+  public Float getDeltaDecay() {
+    if (deltaDecay == null) {
+      throw new NullPointerException("Delta decay is not set");
+    }
+    return deltaDecay;
   }
 
   public String getGraphFilePath() {
