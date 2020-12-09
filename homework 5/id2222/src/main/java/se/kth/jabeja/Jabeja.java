@@ -123,7 +123,7 @@ public class Jabeja {
       int dqq = getDegree(nodeq, nodeq.getColor());
       double oldValue = Math.pow(dpp, alpha) + Math.pow(dqq, alpha);
 
-      // compute dpp and dqq
+      // compute dpq and dqp
       int dpq = getDegree(nodep, nodeq.getColor());
       int dqp = getDegree(nodeq, nodep.getColor());
       double newValue = Math.pow(dpq, alpha) + Math.pow(dqp, alpha);
@@ -134,7 +134,8 @@ public class Jabeja {
       if (linearAnnealing) {
         currentBenefit = newValue;
         updateSolution = newValue * T > oldValue;
-      } else {
+
+      } else {  // exponential or improved exponential annealing policies
         if (config.getAnnealingPolicy() == AnnealingSelectionPolicy.EXPONENTIAL) {
           // acceptance probability: a_p = e^((new - old) / T)
           acceptanceProb = Math.exp((newValue - oldValue) / T);
